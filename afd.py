@@ -1,17 +1,42 @@
 import random
 
-class AutomatoFinito:
+
+class AutomatoDeterministico:
     def __init__(self, estados, alfabeto, transicoes, estado_inicial, estados_finais):
         self.estados = set(estados)
-        self.alfabeto = list(alfabeto)   # lista para gerar palavras
+        self.alfabeto = list(alfabeto)
         self.transicoes = dict(transicoes)
         self.estado_inicial = estado_inicial
         self.estados_finais = set(estados_finais)
 
-    def delta(self, estado, simbolo):
-        return self.transicoes.get((estado, simbolo), None)
+        self.validar_afd()
 
-    def processar(self, palavra, mostrar_passos=False):
+    def validar_afd(self):
+        if self.estado_inicial not in self.estados:
+            raise ValueError("Estado inicial inválido.")
+
+        if not self.estados_finais.issubset(self.estados):
+            raise ValueError("Há estados finais inválidos.")
+
+        for estado in self.estados:
+            for simbolo in self.alfabeto:
+                if (estado, simbolo) not in self.transicoes:
+                    raise ValueError(
+                        f"Transição ausente para ({estado}, {simbolo}). "
+                        "Em um AFD, toda transição deve estar definida."
+                    )
+
+                destino = self.transicoes[(estado, simbolo)]
+
+                if destino not in self.estados:
+                    raise ValueError(
+                        f"Destino inválido na transição ({estado}, {simbolo}) -> {destino}"
+                    )
+
+    def delta(self, estado, simbolo):
+        return self.transicoes[(estado, simbolo)]
+
+    def processar(self, palavra, mostrar_passos=True):
         estado_atual = self.estado_inicial
 
         if mostrar_passos:
@@ -23,9 +48,6 @@ class AutomatoFinito:
                 return False
 
             proximo_estado = self.delta(estado_atual, simbolo)
-
-            if proximo_estado is None:
-                return False
 
             if mostrar_passos:
                 print(f"δ({estado_atual}, {simbolo}) = {proximo_estado}")
@@ -40,22 +62,23 @@ class AutomatoFinito:
     def gerar_palavra_aleatoria(self, tamanho):
         return "".join(random.choice(self.alfabeto) for _ in range(tamanho))
 
-# AUTÔMATO EXEMPLO
+# EXEMPLO DE AFD
 
-estados = ["q0", "q1"]
+
+estados = {"q0", "q1"}
 alfabeto = ["a", "b"]
 
 transicoes = {
     ("q0", "a"): "q1",
     ("q0", "b"): "q0",
     ("q1", "a"): "q1",
-    ("q1", "b"): "q0",
+    ("q1", "b"): "q0"
 }
 
 estado_inicial = "q0"
-estados_finais = ["q1"]
+estados_finais = {"q1"}
 
-automato = AutomatoFinito(
+automato = AutomatoDeterministico(
     estados,
     alfabeto,
     transicoes,
@@ -63,8 +86,10 @@ automato = AutomatoFinito(
     estados_finais
 )
 
+# MENU
+
 while True:
-    print("\n=== AUTÔMATO COM LETRAS ===")
+    print("\n=== AUTÔMATO FINITO DETERMINÍSTICO ===")
     print("1 - Testar palavra manualmente")
     print("2 - Gerar palavra aleatória")
     print("0 - Sair")
@@ -72,7 +97,7 @@ while True:
     opcao = input("Escolha: ")
 
     if opcao == "1":
-        palavra = input("Digite a palavra: ")
+        palavra = input("Digite a palavra: ").strip().lower()
         resultado = automato.processar(palavra, mostrar_passos=True)
         print("Resultado:", "ACEITA" if resultado else "REJEITADA")
 
@@ -80,7 +105,6 @@ while True:
         tamanho = int(input("Tamanho da palavra: "))
         palavra = automato.gerar_palavra_aleatoria(tamanho)
         print("Palavra gerada:", palavra)
-
         resultado = automato.processar(palavra, mostrar_passos=True)
         print("Resultado:", "ACEITA" if resultado else "REJEITADA")
 
